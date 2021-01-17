@@ -1,9 +1,9 @@
 ---
-title: "Go File Descriptors"
-date: 2020-11-13T23:00:00Z
+title: "What makes a great programmer ?"
+date: 2020-09-18T22:00:00Z
 weight: 1
-aliases: ["/go-file-descriptors"]
-tags: ["Go", "File Descriptors", "UNIX"]
+aliases: ["/great-programmer"]
+tags: ["Programming"]
 author: "Josep Jesus Bigorra Algaba"
 showToc: true
 TocOpen: true
@@ -11,25 +11,16 @@ draft: false
 hidemeta: false
 disableShare: false
 cover:
-image: "https://res.cloudinary.com/dehs6irlh/image/upload/v1605355422/jjba-site/blog/go-file-descriptors/file-descriptor_azndem.jpg"
-alt: "Go"
-caption: ""
-relative: false
-hidden: false
+    image: "https://res.cloudinary.com/dehs6irlh/image/upload/v1606135201/jjba-site/blog/great-programmer/great-programmer-highlight_xro9oz.jpg"
+    alt: "Go"
+    caption: ""
+    relative: false
+    hidden: false
 comments: false
-description: "Wondering what to do with the dreaded too many open files error in your Go application?"
+description: "If writing code were a science, all developers would pretty much be the same. But it is not. And just like in art, no two developers have the same thinking or perception..."
 disableHLJS: false
 ---
 
-+++
-authors = ["Josep Jesus Bigorra Algaba"]
-date = 2020-09-18T22:00:00Z
-excerpt = "If writing code were a science, all developers would pretty much be the same. But it is not. And just like in art, no two developers have the same thinking or perception..."
-hero = "https://res.cloudinary.com/dehs6irlh/image/upload/v1606135201/jjba-site/blog/great-programmer/great-programmer-highlight_xro9oz.jpg"
-timeToRead = 5
-title = "What makes a great programmer ?"
-
-+++
 If writing code were a science, all developers would pretty much be the same. But it is not. And just like in art, no two developers have the same thinking or perception while working towards the same outcome.
 
 While some struggle to produce the desired outcome, to a few, it comes almost naturally, as if an epiphany hits them at the moment they start writing code or solve a problem.
