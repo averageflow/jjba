@@ -99,8 +99,11 @@ url = "/tags/"
 weight = 20
 
 [[menu.main]]
-identifier = "example"
-name = "example.org"
-url = "https://example.org"
+identifier = "search"
+name = "search"
+url = "/search"
 weight = 30
 
+
+[outputs]
+home = [ "HTML", "RSS", "JSON" ]
