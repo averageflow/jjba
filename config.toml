@@ -1,4 +1,4 @@
-baseURL = "https://examplesite.com"
+baseURL = "https://jjba.dev"
 title = "JJBA"
 paginate = 5
 theme = "PaperMod"
@@ -39,7 +39,7 @@ iconHeight = 35
 
 [params.profileMode]
 enabled = false
-title = "ExampleSite"
+title = "JJBA"
 imageUrl = "<img location>"
 imageWidth = 120
 imageHeight = 120
