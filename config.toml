@@ -101,6 +101,12 @@ name = "Tags"
 url = "/tags/"
 weight = 20
 
+[[menu.main]]
+identifier = "about"
+name = "About"
+url = "/posts/about"
+weight = 30
+
 
 [outputs]
 home = [ "HTML", "RSS", "JSON" ]
