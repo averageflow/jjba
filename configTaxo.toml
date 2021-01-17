@@ -1,0 +1,26 @@
+timeout = 30_000
+enableInlineShortcodes = true
+
+[taxonomies]
+category = "categories"
+tag = "tags"
+series = "series"
+
+[privacy.vimeo]
+disabled = false
+simple = true
+
+[privacy.twitter]
+disabled = false
+enableDNT = true
+simple = true
+disableInlineCSS = true
+
+[privacy.instagram]
+disabled = false
+simple = true
+
+[privacy.youtube]
+disabled = false
+privacyEnhanced = true
+
