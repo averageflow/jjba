@@ -60,19 +60,19 @@ Then let's create a new IntelliJ IDEA project. I suggest using the IntelliJ IDEA
 
 Then you can open up the IDE and create a new project, select Gradle and make sure to set the checkbox on Groovy.
 
-![](/v1610803588/jjba-site/blog/shared-library-jenkins/mvf2arsz0dmpi721uc6l_xdxosk.png)
+![New Project](https://res.cloudinary.com/dehs6irlh/image/upload/v1610803588/jjba-site/blog/shared-library-jenkins/mvf2arsz0dmpi721uc6l_xdxosk.png)
 
 Next up, enter a GroupId and an ArtifactId.
 
-![](/v1610803587/jjba-site/blog/shared-library-jenkins/6jgw5g2khn8nt9rrc0tp_az9ijw.png)
+![New Project Settings](https://res.cloudinary.com/dehs6irlh/image/upload/v1610803587/jjba-site/blog/shared-library-jenkins/6jgw5g2khn8nt9rrc0tp_az9ijw.png)
 
 Ignore the next window (the defaults are fine), click "Next", enter a project name and click "Finish".
 
-![](/v1610803664/jjba-site/blog/shared-library-jenkins/Screenshot-2019-01-04-at-12.14.52_aevfeu.png)
+![Set defaults](https://res.cloudinary.com/dehs6irlh/image/upload/v1610803664/jjba-site/blog/shared-library-jenkins/Screenshot-2019-01-04-at-12.14.52_aevfeu.png)
 
 IntelliJ should boot up with your new project. The folder structure in your project should be something like the following.
 
-![](/v1610803663/jjba-site/blog/shared-library-jenkins/Screenshot-2019-01-04-at-12.24.01_qak7rp.png)
+![Initial Structure](https://res.cloudinary.com/dehs6irlh/image/upload/v1610803663/jjba-site/blog/shared-library-jenkins/Screenshot-2019-01-04-at-12.24.01_qak7rp.png)
 
 This is cool for usual Java/Groovy projects, but for our purpose we have to change things up a bit since Jenkins demands a project structure like this:
 
