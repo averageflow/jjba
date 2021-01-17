@@ -1,6 +1,6 @@
 baseURL = "https://jjba.dev"
 title = "JJBA"
-paginate = 5
+paginate = 10
 theme = "PaperMod"
 enableRobotsTXT = true
 buildDrafts = false
@@ -34,8 +34,8 @@ safari_pinned_tab = "<link / abs url>"
 
 [params.label]
 text = "JJBA"
-icon = "/apple-touch-icon.png"
-iconHeight = 35
+icon = ""
+iconHeight = 0
 
 [params.profileMode]
 enabled = false
@@ -54,20 +54,17 @@ name = "Tags"
 url = "tags"
 
 [params.homeInfoParams]
-Title = "Hi there 👋"
-Content = "Welcome to my blog"
+Title = "Welcome to Joe's blog 👋"
+Content = "Home of my ideas, knowledge and a good source of information for all the tech-nerds out there !"
 
-[[params.socialIcons]]
-name = "twitter"
-url = "https://twitter.com/"
 
 [[params.socialIcons]]
 name = "stackoverflow"
-url = "https://stackoverflow.com"
+url = "https://stackoverflow.com/users/8845653/josep-jesus-bigorra-algaba"
 
 [[params.socialIcons]]
 name = "github"
-url = "https://github.com/"
+url = "https://github.com/averageflow"
 
 [params.analytics.google]
 SiteVerificationTag = "XYZabc"
@@ -75,7 +72,7 @@ SiteVerificationTag = "XYZabc"
 [params.cover]
 hidden = false
 hiddenInList = true
-hiddenInSingle = true
+hiddenInSingle = false
 
 [params.fuseOpts]
 isCaseSensitive = false
@@ -87,22 +84,22 @@ minMatchCharLength = 0
 keys = [ "title", "permalink", "summary", "content" ]
 
 [[menu.main]]
+identifier = "search"
+name = "Search"
+url = "/search"
+weight = 1
+
+[[menu.main]]
 identifier = "categories"
-name = "categories"
+name = "Categories"
 url = "/categories/"
 weight = 10
 
 [[menu.main]]
 identifier = "tags"
-name = "tags"
+name = "Tags"
 url = "/tags/"
 weight = 20
-
-[[menu.main]]
-identifier = "search"
-name = "search"
-url = "/search"
-weight = 30
 
 
 [outputs]
