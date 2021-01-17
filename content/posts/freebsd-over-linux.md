@@ -1,12 +1,26 @@
-+++
-authors = ["Josep Jesus Bigorra Algaba"]
-date = 2020-10-22T22:00:00Z
-excerpt = "There are important technical reasons to consider migrating from GNU/Linux to FreeBSD"
-hero = "https://res.cloudinary.com/dehs6irlh/image/upload/v1603433377/jjba-site/blog/freebsd/p8jyvxodxkows5fgsnp4_ri0yvg.png"
-timeToRead = 10
-title = "FreeBSD over Linux"
+---
+title: "FreeBSD over Linux"
+date: 2020-10-22T22:00:00Z
+weight: 1
+aliases: ["/freebsd-over-linux"]
+tags: ["FreeBSD", "Linux"]
+author: "Josep Jesus Bigorra Algaba"
+showToc: true
+TocOpen: true
+draft: false
+hidemeta: false
+disableShare: false
+cover:
+    image: "https://res.cloudinary.com/dehs6irlh/image/upload/v1603433377/jjba-site/blog/freebsd/p8jyvxodxkows5fgsnp4_ri0yvg.png"
+    alt: "FreeBSD"
+    caption: ""
+    relative: false
+    hidden: false
+comments: false
+description: "There are important technical reasons to consider migrating from GNU/Linux to FreeBSD"
+disableHLJS: false
+---
 
-+++
 While I believe some of the "political" problems that have been going on with GNU/Linux are important and reasons to consider migrating from GNU/Linux to BSD, there also exist technical reasons to consider.
 
 ### Clean separation

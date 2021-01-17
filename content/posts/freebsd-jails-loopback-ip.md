@@ -18,7 +18,7 @@ cover:
     hidden: false
 comments: false
 description: "Learn how to set up a loopback interface communication for your iocage jails with pf firewall."
-disableHLJS: true
+disableHLJS: false
 ---
 
 In order to keep all of the jails behind a single public IP address, you’ll need to set up a loopback interface and direct the incoming and outgoing traffic of your Jails with a proper firewall like `pf`. Learn how to get started on an amazing setup.

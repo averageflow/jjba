@@ -1,12 +1,26 @@
-+++
-authors = ["Josep Jesus Bigorra Algaba"]
-date = 2020-11-19T23:00:00Z
-excerpt = "This guide assumes you want to install FreeBSD and manually create the ZFS pool, to change default settings, or to not use the entire disk."
-hero = "https://res.cloudinary.com/dehs6irlh/image/upload/v1605883892/jjba-site/blog/freebsd/bsdinstall-zfs-partmenu_mfcis5.png"
-timeToRead = 10
-title = "FreeBSD Root on ZFS - Partitions"
+---
+title: "FreeBSD Root on ZFS - Partitions"
+date: 2020-11-19T23:00:00Z
+weight: 1
+aliases: ["/freebsd-root-on-zfs"]
+tags: ["FreeBSD", "ZFS"]
+author: "Josep Jesus Bigorra Algaba"
+showToc: true
+TocOpen: true
+draft: false
+hidemeta: false
+disableShare: false
+cover:
+    image: "https://res.cloudinary.com/dehs6irlh/image/upload/v1605883892/jjba-site/blog/freebsd/bsdinstall-zfs-partmenu_mfcis5.png"
+    alt: "FreeBSD"
+    caption: ""
+    relative: false
+    hidden: false
+comments: false
+description: "This guide assumes you want to install FreeBSD and manually create the ZFS pool, to change default settings, or to not use the entire disk."
+disableHLJS: false
+---
 
-+++
 It is important to have a clean separation of concerns, both in your code, as in your machine's setup. If you are looking for information on how to get a ZFS FreeBSD setup on one hard-drive with multiple partitions, this is what you want.
 
 This guide assumes you want to install FreeBSD and manually create the ZFS pool, to change default settings, or to not use the entire disk.
