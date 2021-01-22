@@ -16,7 +16,7 @@ cover:
     caption: ""
     relative: false
     hidden: false
-comments: false
+comments: true
 description: "Given nobody actively seeks to write bad code, this leads to the question; how do you know when you’ve written good Go code?"
 disableHLJS: false
 ---

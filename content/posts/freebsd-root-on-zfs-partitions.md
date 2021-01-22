@@ -16,7 +16,7 @@ cover:
     caption: ""
     relative: false
     hidden: false
-comments: false
+comments: true
 description: "This guide assumes you want to install FreeBSD and manually create the ZFS pool, to change default settings, or to not use the entire disk."
 disableHLJS: false
 ---

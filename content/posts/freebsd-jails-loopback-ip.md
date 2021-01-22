@@ -16,7 +16,7 @@ cover:
     caption: ""
     relative: false
     hidden: false
-comments: false
+comments: true
 description: "Learn how to set up a loopback interface communication for your iocage jails with pf firewall."
 disableHLJS: false
 ---

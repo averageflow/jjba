@@ -16,7 +16,7 @@ cover:
     caption: ""
     relative: false
     hidden: false
-comments: false
+comments: true
 description: "Tired of un-testable, un-reliable, repetitive and tedious scripts to deploy your applications with Jenkins? Look no further, here is your solution."
 disableHLJS: false
 ---

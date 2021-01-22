@@ -16,7 +16,7 @@ cover:
     caption: ""
     relative: false
     hidden: false
-comments: false
+comments: true
 description: "Wondering what to do with the dreaded too many open files error in your Go application?"
 disableHLJS: false
 ---

@@ -16,7 +16,7 @@ cover:
     caption: ""
     relative: false
     hidden: false
-comments: false
+comments: true
 description: "The Go language has both make and new functions, what gives ? If you are coming from another language, especially one that uses constructors, it may appear that new should be all you need, but Go is not those languages, nor does it have constructors..."
 disableHLJS: false
 ---

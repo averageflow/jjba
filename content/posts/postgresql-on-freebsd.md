@@ -16,7 +16,7 @@ cover:
     caption: ""
     relative: false
     hidden: false
-comments: false
+comments: true
 description: "How to set up a proper database environment running on our beloved FreeBSD."
 disableHLJS: false
 ---

@@ -16,7 +16,7 @@ cover:
     caption: ""
     relative: false
     hidden: true
-comments: false
+comments: true
 description: "Technology news, how-to's - Josep Jesus Bigorra Algaba personal site"
 disableHLJS: true
 ---

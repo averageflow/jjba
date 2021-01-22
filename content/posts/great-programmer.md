@@ -16,7 +16,7 @@ cover:
     caption: ""
     relative: false
     hidden: false
-comments: false
+comments: true
 description: "If writing code were a science, all developers would pretty much be the same. But it is not. And just like in art, no two developers have the same thinking or perception..."
 disableHLJS: false
 ---

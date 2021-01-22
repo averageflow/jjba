@@ -16,7 +16,7 @@ cover:
     caption: ""
     relative: false
     hidden: false
-comments: false
+comments: true
 description: "There are important technical reasons to consider migrating from GNU/Linux to FreeBSD"
 disableHLJS: false
 ---

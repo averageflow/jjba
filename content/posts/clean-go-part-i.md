@@ -16,7 +16,7 @@ cover:
     caption: "" 
     relative: false
     hidden: false
-comments: false
+comments: true
 description: "Whether you're working on a personal project or as part of a larger team, writing clean code is an important skill to have."
 disableHLJS: false 
 ---
