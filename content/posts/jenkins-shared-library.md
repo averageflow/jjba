@@ -87,33 +87,20 @@ This is cool for usual Java/Groovy projects, but for our purpose we have to chan
 ├── src				# Library code will reside here, this is the source code root, organised as a usual Java project
 │   └── org
 │       └── company
-│           ├── IStepExecutor.groovy
-│           ├── StepExecutor.groovy
-│           ├── ioc
-│           │   ├── ContextRegistry.groovy
-│           │   ├── DefaultContext.groovy
-│           │   └── IContext.groovy
-│           ├── jobs
-│           │   ├── godocs
-│           │   │   └── Job.groovy
-│           └── utils
-│               └── TargetRepository.groovy
 │
 │
 ├── test			# Unit tests for the library code, the contents of this folder will mimic the src folder structure
-│   └── org
-│       └── company
-│           └── jobs
-│               └── godocs
-│                   └── JobTest.groovy
 │
 │
 └── vars			# Globally accessible (from Jenkins) scripts and methods, when loading the library
-    ├── godocs_build.groovy
     └── pipeline.gdsl
 ```
 
-Make sure to add to your `.gitignore` the `.gradle`, `build`, `reports`, `.idea` folders.
+Make sure to add to your `.gitignore` the `.gradle`, `build`, `reports`, `.idea` folders. 
+
+You might be wondering where does `pipeline.gdsl` come from, well that comes from your Jenkins instance, and depending on the plugins and features you have installed on it, the file will contain different content. This can be obtained from the pipeline syntax menu as seen in the picture below. This file will ensure that your IDE understands scripted pipeline steps. A message should pop up after having added the contents to this file, with the text: `DSL descriptor file has been change and isn’t currently executed` to which you should respond `Activate Back`.
+
+![Jenkins IntelliJ Pipeline GDSL](https://res.cloudinary.com/dehs6irlh/image/upload/v1611316353/jjba-site/blog/shared-library-jenkins/GDSL-link_m5b98g.png)
 
 Once you are setup with the project structure like above, edit your `build.gradle` so that it resembles:
 
@@ -138,10 +125,21 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+    maven {
+        url 'https://repo.jenkins-ci.org/releases'
+    }
+    maven {
+        url 'https://repo.jenkins-ci.org/public'
+    }
 }
 
 
 dependencies {
+    implementation group: 'org.jenkins-ci.main', name: 'jenkins-core', version: '2.85'
+    implementation group: 'org.jenkins-ci.plugins.workflow', name: 'workflow-cps', version: '2.41', ext: 'jar'
+    implementation group: 'org.jenkins-ci.plugins.workflow', name: 'workflow-support', version: '2.16', ext: 'jar'
+    implementation group: 'org.jenkins-ci.plugins', name: 'script-security', version: '1.34', ext: 'jar'
+
     implementation 'org.codehaus.groovy:groovy-all:3.0.7'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
@@ -149,9 +147,7 @@ dependencies {
 }
 
 test {
-    // this is only for the cobertura
     jvmArgs '-noverify'
-    // needed for JUnit
     useJUnitPlatform()
 }
 
@@ -169,11 +165,886 @@ sourceSets {
     }
 }
 
-// Optional for test coverage of Groovy files
 cobertura {
     format = 'html'
     includes = ['**/*.groovy']
-    excludes = []
+    excludes = ['*_build.groovy']
     reportsDir = file("./reports")
 }
 ```
+
+At this point we should have a nice folder structure and enough dependencies to use to get to our goal. Cool, it's time to implement our shared library!
+
+## The General Approach
+
+First a quick run-down on how we build our library and on why we do it that way:
+
+We will keep the "custom" steps inside var as simple as possible and without any real logic. Instead, we create classes (inside src) that do all the work.
+
+We create an interface, which declares methods for all required Jenkins steps (sh, bat, error, etc.). The classes call steps only through this interface.
+
+We write unit tests for your classes like you normally would with JUnit and Mockito. This way we are able to:
+
+- Compile and execute our library/unit tests without Jenkins
+- Test that our classes work as intended
+- Test that Jenkins steps are called with the right parameters
+- Test the behaviour of our code when a Jenkins step fails
+- Build, test, run metrics and deploy your Jenkins Pipeline Library through Jenkins itself
+
+Now let's get really going.
+
+## The Interface For Step Access
+
+First, we will create the interface inside `org.somecompany` that will be used by all classes to access the regular Jenkins steps like `sh` or `error`. We will start with a simple example, and then I will provide a more advanced one.
+
+```groovy
+package org.somecompany
+
+interface IStepExecutor {
+    int sh(String command)
+    void error(String message)
+    // add more methods for respective steps if needed
+}
+```
+
+This interface is neat, because it can be mocked inside our unit tests. That way our classes become independent to Jenkins itself. For now, let's add an implementation that will be used in our vars Groovy scripts:
+
+```groovy
+package org.somecompany
+
+class StepExecutor implements IStepExecutor {
+    // this will be provided by the vars script and 
+    // let's us access Jenkins steps
+    private steps 
+
+    StepExecutor(steps) {
+        this.steps = steps
+    }
+
+    @Override
+    int sh(String command) {
+        this.steps.sh returnStatus: true, script: "${command}"
+    }
+
+    @Override
+    void error(String message) {
+        this.steps.error(message)
+    }
+}
+```
+
+Here is a more complex example, with more available methods. You can expand on this by looking at the `pipeline.gdsl` file and taking abstractions from there, both for methods, and properties.
+
+```groovy
+import org.jenkinsci.plugins.workflow.cps.EnvActionImpl
+import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
+
+interface IStepExecutor {
+    /**
+     * Current build environment variables
+     */
+    public EnvActionImpl env
+
+    /**
+     * Current build details
+     */
+    public RunWrapper currentBuild
+
+    /**
+     * Current build parameters
+     */
+    public Map params
+
+    /**
+     * Shell Script
+     * @param command
+     * @return
+     */
+    int sh(String command)
+
+    /**
+     * Shell Script
+     * @param label
+     * @param command
+     * @return
+     */
+    int sh(String label, String command)
+
+    /**
+     * Error signal
+     * @param message
+     */
+    void error(String message)
+
+    /**
+     * Stage of a Jenkins build
+     * @param name
+     * @param body
+     */
+    void stage(String name, Closure body)
+
+    /**
+     * Execute closures in parallel
+     * @param closures
+     */
+    void parallel(Map closures)
+
+    /**
+     * Recursively delete the current directory from the workspace
+     */
+    void deleteDir()
+
+    /**
+     * Update the commit status in GitLab
+     * @param name
+     * @param status
+     */
+    void updateGitlabCommitStatus(String name, String status)
+
+    /**
+     * Send Slack Message
+     * @param channel
+     * @param color
+     * @param iconEmoji
+     * @param message
+     */
+    void slackSend(String channel, String color, String iconEmoji, String message)
+
+    /**
+     * Accept GitLab Merge Request
+     * @param useMRDescription
+     * @param removeSourceBranch
+     */
+    void acceptGitLabMR(Boolean useMRDescription, Boolean removeSourceBranch)
+
+    /**
+     * Archive JUnit-formatted test results
+     * @param location
+     */
+    void junit(String location)
+
+    /**
+     * Stash some files to be used later in the build
+     * @param name
+     * @param includes
+     */
+    void stash(String name, String includes)
+
+    /**
+     * Restore files previously stashed
+     * @param name
+     */
+    void unstash(String name)
+
+    /**
+     * PowerShell Script
+     * @param command
+     * @return
+     */
+    int powershell(String command)
+
+    /**
+     * PowerShell Script
+     * @param label
+     * @param command
+     * @return
+     */
+    int powershell(String label, String command)
+
+    /**
+     * Change current directory
+     * @param directory
+     * @param body
+     */
+    void dir(String directory, Closure body)
+
+    /**
+     * Allocate node. Change execution of build to said agent
+     * @param name
+     * @param body
+     */
+    void node(String name, Closure body)
+
+    /**
+     * Catch error and set build result to failure
+     * @param params
+     * @param body
+     */
+    void catchError(Map params, Closure body)
+
+    /**
+     * Add Cobertura coverage report result
+     * @param location
+     */
+    void cobertura(String location)
+}
+
+```
+
+And the implementation:
+
+```groovy
+import org.jenkinsci.plugins.workflow.cps.EnvActionImpl
+import org.jenkinsci.plugins.workflow.support.steps.build.RunWrapper
+
+final class StepExecutor implements IStepExecutor {
+    // this will be provided by the vars script and
+    // let's us access Jenkins steps
+    private steps
+
+    public EnvActionImpl env
+    public RunWrapper currentBuild
+    public Map params
+
+    StepExecutor(steps) {
+        this.steps = steps
+        this.env = this.steps.env
+        this.currentBuild = this.steps.currentBuild
+        this.params = Collections.unmodifiableMap(this.steps.params)
+    }
+
+    @Override
+    int sh(String command) {
+        this.steps.sh returnStatus: true, script: "${command}"
+    }
+
+    @Override
+    int sh(String description, String command) {
+        this.steps.sh returnStatus: true, label: "${description}", script: "${command}"
+    }
+
+    @Override
+    int powershell(String command) {
+        this.steps.powershell returnStatus: true, script: "${command}"
+    }
+
+    @Override
+    int powershell(String description, String command) {
+        this.steps.powershell returnStatus: true, label: "${description}", script: "${command}"
+    }
+
+    @Override
+    void error(String message) {
+        this.steps.currentBuild.setResult(JobStatus.Failure)
+        this.steps.error(message)
+    }
+
+    @Override
+    void stage(String name, Closure body) {
+        this.steps.stage(name, body)
+    }
+
+    @Override
+    void parallel(Map closures) {
+        this.steps.parallel(closures)
+    }
+
+    @Override
+    void deleteDir() {
+        this.steps.deleteDir()
+    }
+
+    @Override
+    void updateGitlabCommitStatus(String name, String status) {
+        this.steps.updateGitlabCommitStatus name: "${name}", status: "${status}"
+    }
+
+    @Override
+    void slackSend(String channel, String color, String iconEmoji, String message) {
+        this.steps.slackSend baseUrl: "https://hooks.slack.com/services/", botUser: true,
+                channel: "${channel}", color: "${color}", iconEmoji: "${iconEmoji}",
+                message: "${message}", teamDomain: "teamDomain",
+                tokenCredentialId: "token", username: "webhookbot"
+    }
+
+    @Override
+    void acceptGitLabMR(Boolean useMRDescription, Boolean removeSourceBranch) {
+        this.steps.acceptGitLabMR useMRDescription: useMRDescription, removeSourceBranch: removeSourceBranch
+    }
+
+    @Override
+    void stash(String name, String includes) {
+        this.steps.stash name: "${name}", includes: "${includes}"
+    }
+
+    @Override
+    void unstash(String name) {
+        this.steps.unstash name: "${name}"
+    }
+
+    @Override
+    void dir(String directory, Closure body) {
+        this.steps.dir(directory, body)
+    }
+
+    @Override
+    void node(String name, Closure body) {
+        this.steps.node(name, body)
+    }
+
+    @Override
+    void catchError(Map params, Closure body) {
+        this.steps.catchError buildResult: params.buildResult,
+                catchInterruptions: params.catchInterruptions,
+                message: params.message,
+                stageResult: params.stageResult,
+                body: body
+    }
+
+    @Override
+    void junit(String location) {
+        this.steps.junit testResults: "${location}", allowEmptyResults: false
+    }
+
+    @Override
+    void cobertura(String location) {
+        this.steps.cobertura autoUpdateHealth: false,
+                autoUpdateStability: false,
+                coberturaReportFile: "${location}",
+                conditionalCoverageTargets: '70, 0, 0',
+                failUnhealthy: false,
+                failUnstable: false,
+                lineCoverageTargets: '80, 0, 0',
+                maxNumberOfBuilds: 0,
+                methodCoverageTargets: '80, 0, 0',
+                onlyStable: false,
+                sourceEncoding: 'ASCII',
+                zoomCoverageChart: false
+    }
+}
+```
+
+## Adding Basic Dependency Injection
+
+Because we don't want to use the above implementation in our unit tests, we will setup some basic dependency injection in order to swap the above implementation with a mock during unit tests. If you are not familiar with dependency injection, you should probably read up about it, since explaining it here would be out-of-scope, but you might be fine with just copy-pasting the code in this chapter and follow along.
+
+So, first we create the org.somecompany.ioc package and add an IContext interface:
+
+```groovy
+package org.somecompany.ioc
+
+import org.somecompany.IStepExecutor
+
+interface IContext {
+    IStepExecutor getStepExecutor()
+}
+```
+
+Again, this interface will be mocked for our unit tests. But for regular execution of our library we still need an default implementation:
+
+```groovy
+package org.somecompany.ioc
+
+import org.somecompany.IStepExecutor
+import org.somecompany.StepExecutor
+
+class DefaultContext implements IContext, Serializable {
+    // the same as in the StepExecutor class
+    private steps
+
+    DefaultContext(steps) {
+        this.steps = steps
+    }
+
+    @Override
+    IStepExecutor getStepExecutor() {
+        return new StepExecutor(this.steps)
+    }
+}
+```
+
+To finish up our basic dependency injection setup, let's add a "context registry" that is used to store the current context (DefaultContext during normal execution and a Mockito mock of IContext during unit tests):
+
+```groovy
+package org.somecompany.ioc
+
+class ContextRegistry implements Serializable {
+    private static IContext context
+
+    static void registerContext(IContext context) {
+        context = context
+    }
+
+    static void registerDefaultContext(Object steps) {
+        context = new DefaultContext(steps)
+    }
+
+    static IContext getContext() {
+        return context
+    }
+}
+```
+
+That's it! Now we are free to code testable Jenkins steps inside `vars`.
+
+## Coding A Custom Jenkins Step
+
+Let's imagine for our example here, that we want to add a step to our library that calls the some class that performs some data seeding to a database. To do this we first add a groovy script `example_build.groovy` to the `vars` folder that is called like our custom step we want to implement. Since our script is called `example_build.groovy` our step will later be callable with `example_build` in our `Jenkinsfile`. Add the following content to the script for now:
+
+```groovy
+void call(
+        String environment,
+        String envFile,
+        String dataSeederBranch,
+        String deploymentScriptsBranch
+) {
+    // TODO
+}
+```
+
+According to our general idea we want to keep our example_build script as simple as possible and do all the work inside a unit-testable class. So let's create a new class `DataSeederJob` in a new package org.somecompany.jobs:
+
+```groovy
+package org.somecompany.jobs
+
+final class DataSeederJob implements Serializable {
+    private String workspace
+    private String environment
+    private String envFile
+    private String dataSeederBranch
+    private String deploymentScriptsBranch
+    private String seedingEnvironment
+    private String seedingMode
+    private ArrayList<TargetRepository> repositories
+
+    DataSeederJob(
+            String workspace,
+            String environment,
+            String envFile,
+            String dataSeederBranch,
+            String deploymentScriptsBranch,
+            String seedingEnvironment,
+            String seedingMode
+    ) {
+        this.workspace = workspace
+        this.environment = environment
+        this.envFile = envFile
+        this.dataSeederBranch = dataSeederBranch
+        this.deploymentScriptsBranch = deploymentScriptsBranch
+        this.seedingEnvironment = seedingEnvironment
+        this.seedingMode = seedingMode
+
+        this.repositories = [
+                new TargetRepository(
+                        "repo1",
+                        this.deploymentScriptsBranch,
+                        "deploymentscripts"
+                ),
+                new TargetRepository(
+                        "repo2",
+                        this.dataSeederBranch,
+                        "dataseeder"
+                )
+        ]
+    }
+
+    void build() {
+        IStepExecutor steps = ContextRegistry.getContext().getStepExecutor()
+
+        steps.deleteDir()
+
+        steps.stage("Cloning new content", {
+            SourceControlUtils.parallelCheckoutCode(steps, this.repositories)
+        })
+
+        steps.stage("Preparing application environment", {
+            int status = steps.sh("""
+                 /bin/cp deploymentscripts/${this.environment}/DataSeeder/${this.envFile} dataseeder/dist/config.toml
+            """)
+            if (status != 0) {
+                steps.error("Job failed! Copying env file exited with a non-zero status!")
+            }
+        })
+
+        steps.stage("Running DataSeeder", {
+            int status = steps.sh("""
+                cd dataseeder/dist
+                ./goseeders-linux-x86 -env=${this.seedingEnvironment} -mode=${this.seedingMode}
+            """)
+            if (status != 0) {
+                steps.error("Job failed! Application exited with a non-zero status!")
+            }
+        })
+    }
+}
+
+```
+
+As you can see, we use both the sh, deleteDir, stage and error steps in our class, but instead of using them directly, we use the ContextRegistry to get an instance of IStepExecutor to call Jenkins steps with that. This way, we can swap out the context when we want to unit test the build() method later.
+
+Now we can finish our script in `vars` folder, which in this case will also send a Slack message on failure:
+
+```groovy
+void call(
+        String environment,
+        String envFile,
+        String dataSeederBranch,
+        String deploymentScriptsBranch
+) {
+    ContextRegistry.registerDefaultContext(this)
+    IStepExecutor steps = ContextRegistry.getContext().getStepExecutor()
+
+    try {
+        DataSeederJob buildExecutor = new DataSeederJob(
+                steps.env.getProperty(EnvironmentVariables.workspace),
+                environment,
+                envFile,
+                dataSeederBranch,
+                deploymentScriptsBranch,
+                steps.params["SeedingEnvironment"] as String,
+                steps.params["SeedingMode"] as String
+        )
+        buildExecutor.build()
+    } catch (e) {
+        steps.currentBuild.setResult(JobStatus.Failure)
+        throw e
+    } finally {
+        String result = JobStatus.Success
+        if (steps.currentBuild.getResult() != null) {
+            result = steps.currentBuild.getResult()
+        }
+
+        switch (result) {
+            case JobStatus.Failure:
+                steps.slackSend(
+                        SlackChannels.monitoringChannel,
+                        SlackColors.failure,
+                        SlackEmojis.failure,
+                        String.format("""
+                        %s - TEST PIPELINE FRAMEWORK 
+                        PARAMETERS: %s
+                        """,
+                                steps.currentBuild.getFullDisplayName(),
+                                steps.params.toString(),
+                        ),
+                )
+                break
+            default:
+                break
+        }
+    }
+}
+```
+
+First, we set the context with the context registry. Since we are not in a unit test, we use the default context. The `this` that gets passed into `registerDefaultContext()` will be saved by the `DefaultContext` inside its private `steps` variable and is used to access Jenkins steps. After registering the context, we are free to instantiate our MsBuild class and call the `build()` method doing all the work.
+
+Nice, our `vars` script is finished. Now we only have to write some unit tests for our `Job` class.
+
+## Adding Unit Tests
+
+At this point writing unit tests should be business as usual. We create a new test class `JobTest` inside the test folder with package `org.somecompany.jobs`. Before every test, we use Mockito to mock the `IContext` and `IStepExecutor` interfaces and register the mocked context. Then we can simply create a new `Job` instance in our test and verify the behaviour of our `build()` method. 
+
+Here is the data seeder test class:
+
+```groovy
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+
+import static org.mockito.ArgumentMatchers.any
+import static org.mockito.ArgumentMatchers.anyString
+import static org.mockito.Mockito.times
+import static org.mockito.Mockito.verify
+
+final class DataSeederJobTest {
+    private DataSeederJob sut
+
+    protected IContext context
+    protected IStepExecutor steps
+
+    @BeforeEach
+    void setup() {
+        context = mock(IContext.class)
+        steps = mock(IStepExecutor.class)
+
+        when(context.getStepExecutor()).thenReturn(steps)
+
+        ContextRegistry.registerContext(context)
+    }
+    
+    @BeforeEach
+    void setupJob() {
+        String workspace = "workspace"
+        String environment = "environment"
+        String envFile = "envFile"
+        String dataSeederBranch = "dataSeederBranch"
+        String deploymentScriptsBranch = "deploymentScriptsBranch"
+        String seedingEnvironment = "seedingEnvironment"
+        String seedingMode = "seedingMode"
+
+        this.sut = new DataSeederJob(
+                workspace,
+                environment,
+                envFile,
+                dataSeederBranch,
+                deploymentScriptsBranch,
+                seedingEnvironment,
+                seedingMode
+        )
+    }
+
+    @Test
+    void jobBuildCallsDeleteDirStep() {
+        this.sut.build()
+
+        verify(steps).deleteDir()
+    }
+
+    @Test
+    void jobBuildCallsStageSteps() {
+        this.sut.build()
+
+        verify(steps, times(3)).stage(anyString(), any(Closure))
+    }
+}
+```
+
+Another test class with several example tests, but unrelated to the data seeder:
+
+```groovy
+package org.somecompany.jobs
+
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+
+import static org.mockito.ArgumentMatchers.any
+import static org.mockito.ArgumentMatchers.anyString
+import static org.mockito.Mockito.*
+import org.junit.jupiter.api.BeforeEach
+import static org.mockito.Mockito.mock
+import static org.mockito.Mockito.when
+
+
+final class GenericGoJobTest {
+    private GenericGoJob sut
+
+    private String workspace = "workspace"
+    private String appName = "appName"
+    private String releaseDir = "releaseDir"
+    private String repoName = "repoName"
+    private String serviceName = "serviceName"
+    private Boolean shouldUnitTest = false
+    private Boolean deployToDifferentAgents = false
+    private ArrayList<String> destinationAgents = ["destinationAgent"]
+    private String mainGoFileLocation = "mainGoFileLocation"
+
+    protected IContext context
+    protected IStepExecutor steps
+
+    @BeforeEach
+    void setup() {
+        context = mock(IContext.class)
+        steps = mock(IStepExecutor.class)
+
+        when(context.getStepExecutor()).thenReturn(steps)
+
+        ContextRegistry.registerContext(context)
+    }
+
+
+    @BeforeEach
+    void setupJob() {
+        this.sut = new GenericGoJob(
+                this.workspace,
+                this.appName,
+                this.releaseDir,
+                this.repoName,
+                this.serviceName,
+                this.mainGoFileLocation,
+                this.shouldUnitTest,
+                this.deployToDifferentAgents,
+                this.destinationAgents,
+        )
+    }
+
+    @Test
+    void verifyJobCallsDeleteDir() {
+        this.sut.build()
+
+        verify(steps).deleteDir()
+    }
+
+    @Test
+    void verifyJobCallsStagesCorrectAmountOfTimes() {
+        this.sut.build()
+
+        verify(steps, times(5)).stage(anyString(), any(Closure))
+    }
+
+    @Test
+    void verifyJobCallsStagesCorrectAmountOfTimesWithDifferentAgentOption() {
+        this.deployToDifferentAgents = true
+        this.setupJob()
+        this.sut.build()
+
+        verify(steps, times(4)).stage(anyString(), any(Closure))
+    }
+
+    @Test
+    void verifyJobDoesNotCallNode() {
+        this.sut.build()
+
+        verify(steps, times(0)).node(anyString(), any(Closure))
+    }
+
+    @Test
+    void verifyJobCallsNodeWithDifferentAgentOption() {
+        this.deployToDifferentAgents = true
+        this.setupJob()
+        this.sut.build()
+
+        verify(steps, times(1)).node(anyString(), any(Closure))
+    }
+
+    @Test
+    void verifyJobCallsStageOneMoreTimeWithUnitTests() {
+        this.shouldUnitTest = true
+        this.setupJob()
+        this.sut.build()
+
+        verify(steps, times(6)).stage(anyString(), any(Closure))
+    }
+
+    @Test
+    void verifyJobCallsNodeMultipleTimesWithDifferentAgentOption() {
+        this.deployToDifferentAgents = true
+        this.destinationAgents = [
+                "test1",
+                "test2",
+                "test3",
+                "test4",
+                "test5",
+        ]
+
+        this.setupJob()
+        this.sut.build()
+
+        verify(steps, times(5)).node(anyString(), any(Closure))
+    }
+
+    @Test
+    void verifyDeployGoSystemServiceCallsDir() {
+        this.sut.deployGoSystemService(steps)
+
+        verify(steps, times(1)).dir(anyString(), any(Closure))
+    }
+
+    @Test
+    void verifyBuildGoApplicationCallsSh() {
+        this.sut.buildGoApplication(steps)
+
+        verify(steps, times(1)).sh(anyString())
+    }
+
+    @Test
+    void verifyBuildGoApplicationCallsError() {
+        when(steps.sh(anyString())).thenReturn(-1)
+
+        this.sut.buildGoApplication(steps)
+
+        verify(steps).error(anyString())
+    }
+
+    @Test
+    void verifyUnitTestApplicationCallsStage() {
+        this.sut.unitTestApplication(steps)
+
+        verify(steps, times(1)).stage(anyString(), any(Closure))
+    }
+
+    @Test
+    void verifyDeployBuildCallsNodeCorrectly() {
+        this.deployToDifferentAgents = true
+        this.destinationAgents = [
+                "test1",
+                "test2",
+                "test3",
+                "test4",
+                "test5",
+        ]
+        this.setupJob()
+        this.sut.deployBuild(steps)
+
+        verify(steps, times(5)).node(anyString(), any(Closure))
+    }
+
+
+    @Test
+    void verifyDeployBuildCallsStageCorrect() {
+        this.sut.deployBuild(steps)
+
+        verify(steps, times(1)).stage(anyString(), any(Closure))
+    }
+
+
+    @Test
+    void verifyPrepareStashContentCallsSh() {
+        this.sut.prepareStashContent(steps)
+
+        verify(steps, times(2)).sh(anyString())
+    }
+
+    @Test
+    void verifyPrepareStashCallsError() {
+        when(steps.sh(anyString())).thenReturn(-1)
+
+        this.sut.prepareStashContent(steps)
+
+        verify(steps, times(2)).error(anyString())
+    }
+
+    @Test
+    void verifyStashBuildCallsSh() {
+        this.sut.stashBuild(steps)
+
+        verify(steps, times(1)).sh(anyString())
+    }
+
+    @Test
+    void verifyStashBuildCallsError() {
+        when(steps.sh(anyString())).thenReturn(-1)
+
+        this.sut.stashBuild(steps)
+
+        verify(steps).error(anyString())
+    }
+}
+```
+
+You can use the green play buttons on left of the IntelliJ code editor to run the tests, which hopefully turn green.
+
+## Wrapping Things Up
+
+That's basically it. Now it's time to setup your library with Jenkins, create a new job and run a `Jenkinsfile` to test your new custom example_build step. A simple test `Jenkinsfile` could look like this:
+
+```groovy
+node('master') {
+    // Load your library
+    library('pipeline-framework@master')
+    
+    // call the script with parameters
+    // if your call function does not require any params
+    // you could simply do example_build.call(), which I prefer,
+    // or simply example_build
+    
+    example_build.call(
+            'Acceptance',
+            'config.toml',
+            'master',
+            'stable'
+    )
+}
+```
+
+Then you can decide either to add this to a Pipeline job immediately on the script box, or checkout this small script from SCM, that is up to you.
+
+Obviously there is still a lot more I could have talked about (things like unit tests, dependency injection, Gradle, Jenkins configuration, build and testing the library with Jenkins itself etc.), but I wanted to keep this already very long blog post somewhat concise. I do hope however, that the general idea and approach became clear and helps you in creating a unit-testable shared library, that is more robust and easier to work on than it normally would be.
+
+One last piece of advice: The unit tests and Gradle setup are pretty nice and help a ton in easing the development of robust shared pipelines, but unfortunately there is still quite a bit that can go wrong inside your pipelines even though the library tests are green. Things like the following, that mostly happen because of Jenkins' Groovy and sandbox weirdness:
+
+- A class that does not implement Serializable which is necessary, because "pipelines must survive Jenkins restarts"
+- Using classes like java.io.File inside your library, which is prohibited
+- Syntax and spelling errors in your `Jenkinsfile`
+
+Therefore, it might be a good idea to have Jenkins instance solely for integration testing, where new and modified `vars` scripts can be tested before going "live".
+
+Again, feel free to write any kind of questions or feedback in the comments, or contact me directly.
