@@ -11,11 +11,11 @@ draft: false
 hidemeta: false
 disableShare: false
 cover:
-image: "https://res.cloudinary.com/dehs6irlh/image/upload/v1601732689/Gophers/bumper640x360_kjo0i8.png"
-alt: "Go"
-caption: ""
-relative: false
-hidden: false
+    image: "https://res.cloudinary.com/dehs6irlh/image/upload/v1601732689/Gophers/bumper640x360_kjo0i8.png"
+    alt: "Go"
+    caption: ""
+    relative: false
+    hidden: false
 comments: true
 description: "Code style guide based on years of experience and inspiration/ideas from conference talks"
 disableHLJS: false
