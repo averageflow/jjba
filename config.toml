@@ -55,7 +55,7 @@ url = "tags"
 
 [params.homeInfoParams]
 Title = "Welcome to Joe's blog 👋"
-Content = "Home of my ideas, knowledge and a good source of information for all the tech-nerds out there !"
+Content = "Joe is a dedicated full stack developer, specializing in Go, MySQL and Groovy."
 
 
 [[params.socialIcons]]
