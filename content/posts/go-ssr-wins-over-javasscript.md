@@ -25,7 +25,7 @@ In this day and age, server side rendering proves it is stable and more effectiv
 
 Besides that fact, SPA and API situations, where you have a decoupled frontend from the backend, still do not justify the fact of using JavaScript, or even worse, any of its frameworks. That paradigm can easily be, in most cases, fulfilled by server side rendering in the backend language of your choice, which will spit out a digested HTML for your clients. 
 
-In specific, if you keep the same programming language, in my case Go, across your applications, you can share a lot of logic, data models, and you get a consistent developer, and easier to maintain system.
+In specific, if you keep the same programming language, in my case Go, across your applications, you can share a lot of logic, data models, and you get a consistent developer experience, and an easier to maintain system.
 
 Not to mention the fact that the JavaScript ecosystem goes with the wind, is the most unstable place I have ever seen, and most of the times I need to look into some source code written in that language, of some external package dependency, I start questioning the author's sanity, and mine, and also my career choices.
 
