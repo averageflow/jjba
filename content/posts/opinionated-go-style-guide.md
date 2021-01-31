@@ -384,11 +384,6 @@ This approach only makes sense for very big or tree-like structs.
 Google open sourced their [go-cmp](http://github.com/google/go-cmp) package as a more powerful and safer alternative to `reflect.DeepEqual`.
 – [Joe Tsai](https://twitter.com/francesc/status/885630175668346880).
 
-### Avoid testing unexported funcs
-
-Only test unexported funcs if you can't access a path via exported funcs.
-Since they are unexported, they are prone to change.
-
 ### Add examples to your test files to demonstrate usage
 ```go
 func ExamleSomeInterface_SomeMethod(){
