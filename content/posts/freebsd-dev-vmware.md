@@ -1,6 +1,6 @@
 ---
 title: "FreeBSD Development GNOME VMWare"
-date: 2021-03-29T12:00:00Z
+date: 2021-03-28T09:00:00Z
 weight: 1
 aliases: ["/freebsd-dev-vmware"]
 tags: ["FreeBSD", "VMWare", "Dev", "GNOME"]
