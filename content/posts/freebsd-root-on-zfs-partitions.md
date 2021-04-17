@@ -50,18 +50,25 @@ gpart create -s gpt ada0
 ```
 
 Then create the boot code partition:
-for UEFI Boot:
-
-```sh
-gpart add -a 4k -s 800K -t efi ada0
-gpart bootcode -p /boot/boot1.efifat -i 1 ada0
-```
 
 for Legacy Boot:
 
 ```sh
+# Confirmed working on FreeBSD 13
 gpart add -a 4k -s 512K -t freebsd-boot ada0
 gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 ada0
+```
+
+for UEFI Boot we will need more space and some more manual steps:
+
+```sh
+# Confirmed working on FreeBSD 13
+gpart add -t efi -s 40M ada0
+newfs_msdos -F 32 -c 1 /dev/ada0p1
+mount -t msdosfs /dev/ada0p1 /mnt
+mkdir -p /mnt/EFI/BOOT
+cp /boot/loader.efi /mnt/EFI/BOOT/BOOTX64.efi
+umount /mnt
 ```
 
 We will now be creating the needed partitions to setup the system as we wish. I will be working with a 20GB hard drive, which I want to split in 3 partitions. 2GB for Swap, 10 GB for the FreeBSD installation and the remaining (8GB) for the Jails storage, in a secondary pool which will later be created.
